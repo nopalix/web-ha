@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WEB-HA - Asistente TDAH Local-First</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="/manifest.json">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#0f172a',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 px-6 py-4 flex justify-between items-center shadow-md">
+    <div class="flex items-center space-x-3">
+      <span class="text-2xl">🧠</span>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-xl font-bold tracking-tight text-white">WEB-HA</h1>
+          <span class="text-xs px-2 py-0.5 bg-blue-900/80 text-blue-300 rounded-full font-mono">v1.4.0</span>
+        </div>
+        <p class="text-xs text-slate-400">Asistente Local-First (TDAH)</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-4">
+      <span id="sync-status" class="text-sm font-medium text-slate-400">Verificando...</span>
+      <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm shadow transition flex items-center space-x-2">
+        <span>➕ Nueva Nota / Tarea</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Ambitos Filter Bar -->
+  <nav class="bg-slate-900/60 border-b border-slate-800 px-6 py-3 overflow-x-auto flex space-x-2 sticky top-[73px] z-20 backdrop-blur-md">
+    <button onclick="filterAmbito('Todos')" data-ambito="Todos" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-blue-600 text-white shadow transition whitespace-nowrap">Todos</button>
+    <button onclick="filterAmbito('Personal')" data-ambito="Personal" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Personal</button>
+    <button onclick="filterAmbito('Trabajo')" data-ambito="Trabajo" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Trabajo</button>
+    <button onclick="filterAmbito('Tramites')" data-ambito="Tramites" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Trámites</button>
+    <button onclick="filterAmbito('Plataformas')" data-ambito="Plataformas" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Plataformas</button>
+    <button onclick="filterAmbito('Servicios')" data-ambito="Servicios" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Servicios</button>
+    <button onclick="filterAmbito('Deudas')" data-ambito="Deudas" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Deudas</button>
+    <button onclick="filterAmbito('Avisos')" data-ambito="Avisos" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Avisos</button>
+    <button onclick="filterAmbito('Constantes')" data-ambito="Constantes" class="ambito-btn px-4 py-2 rounded-lg font-medium text-sm bg-slate-800 text-slate-300 hover:bg-slate-700 transition whitespace-nowrap">Constantes</button>
+  </nav>
+
+  <!-- Main Content Grid -->
+  <main class="flex-1 p-6 max-w-7xl mx-auto w-full">
+    <div id="notes-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Notes injected here -->
+    </div>
+  </main>
+
+  <!-- Modal Create Note -->
+  <div id="note-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl my-8">
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
+        <h2 id="modal-title" class="text-lg font-bold text-white">Registrar Nueva Nota o Tarea</h2>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl">&times;</button>
+      </div>
+
+      <!-- Audio Recorder Widget -->
+      <div class="mb-5 bg-slate-950 p-4 rounded-xl border border-slate-800 text-center">
+        <p class="text-xs text-slate-400 mb-2">¿Prefieres dictar tu idea? (Transcripción local con Whisper)</p>
+        <button type="button" id="record-audio-btn" onclick="toggleRecordAudio()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg text-sm transition">
+          🎙️ Grabar Audio
+        </button>
+        <div id="audio-preview-container" class="hidden mt-3">
+          <audio id="audio-player" controls class="w-full h-8 mb-2"></audio>
+          <textarea id="note-transcripcion" readonly class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 resize-none h-16" placeholder="Transcripción automática..."></textarea>
+        </div>
+      </div>
+
+      <form id="note-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Ámbito</label>
+          <select id="note-ambito" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <option value="Personal">Personal</option>
+            <option value="Trabajo">Trabajo</option>
+            <option value="Tramites">Trámites</option>
+            <option value="Plataformas">Plataformas</option>
+            <option value="Servicios">Servicios</option>
+            <option value="Deudas">Deudas</option>
+            <option value="Avisos">Avisos</option>
+            <option value="Constantes">Constantes</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Título / Objetivo / Servicio / Deuda *</label>
+          <input type="text" id="note-titulo" required class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ej. Pagar servicio de internet...">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Descripción / Detalle</label>
+          <textarea id="note-descripcion" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none" placeholder="Detalles de la tarea..."></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Dependencias</label>
+            <input type="text" id="note-dependencias" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" placeholder="Requisitos previos">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Ubicación</label>
+            <input type="text" id="note-ubicacion" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" placeholder="Lugar o enlace">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Enterado</label>
+            <input type="date" id="note-enterado" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Fecha Límite</label>
+            <input type="date" id="note-limite" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Monto ($)</label>
+            <input type="number" step="0.01" id="note-monto" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Estado</label>
+            <input type="text" id="note-estado" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-slate-200" placeholder="POR PAGAR / PAGADO">
+          </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition">Cancelar</button>
+          <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-750 text-white rounded-lg text-sm font-medium transition shadow">Guardar Nota</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Scripts -->
+  <script src="/js/db.js?v=2"></script>
+  <script src="/js/audio.js?v=2"></script>
+  <script src="/js/sync.js?v=2"></script>
+  <script src="/js/app.js?v=1.4.0"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+      });
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

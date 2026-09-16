@@ -1,0 +1,24 @@
+# Entornos virtuales y caché
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Secretos, tokens y envs
+.env
+*.env
+*.json
+credentials.json
+token.json
+
+# Base de datos y multimedia
+*.sqlite
+database.sqlite
+uploads/
+backend/uploads/
+
+# Archivos personales
+*.txt
+*.ods
+logs/
+*.log
