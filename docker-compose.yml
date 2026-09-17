@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web_ha_service:
+    build: .
+    container_name: web_ha_container
+    restart: always
+    ports:
+      - "8001:8001"
+    env_file:
+      - backend/.env
+    volumes:
+      - ./backend/database.sqlite:/app/backend/database.sqlite
+      - ./backend/uploads:/app/backend/uploads
+      - ./logs:/app/logs
